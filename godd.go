@@ -1,7 +1,10 @@
 
 package godd
 
-import "fmt"
+import (
+  "fmt"
+  "log"
+)
 
 type Set []int
 
@@ -24,9 +27,11 @@ type Run struct {
 	Minimal Set
 	Hists []*Hist
   tested map[string]bool
+
 }
 
 func (r *Run) MinFail() error {
+  log.Println("--------------------- begin test ----------------------")
   r.tested = make(map[string]bool)
 	r.ddmin(intRange(r.Inp.Len()), 2)
 	return nil
@@ -34,24 +39,27 @@ func (r *Run) MinFail() error {
 
 func (r *Run) ddmin(set Set, n int) {
 	subs, complements := split(set, n)
-  fmt.Println("--------- recurse ------------")
-  fmt.Println("subs: ", subs)
-  fmt.Println("complements: ", complements)
+  log.Println("--------- recurse ------------")
+  log.Println("subs: ", subs)
+  log.Println("complements: ", complements)
 
 	// reduce to subset
   if nextSet := r.testSets(subs); nextSet != nil {
+      log.Println("reducing to subset...")
 			r.ddmin(nextSet, 2)
       return
 	}
 
 	// reduce to complement
   if nextSet := r.testSets(complements); nextSet != nil {
+      log.Println("reducing to complement...")
 			r.ddmin(nextSet, max(n-1, 2))
       return
 	}
 
 	// increase granularity
 	if n < len(set) {
+    log.Println("increase granularity...")
 		r.ddmin(set, min(len(set), 2 * n))
 	}
 }
@@ -83,7 +91,7 @@ func split(set Set, n int) ([]Set, []Set) {
 	for i := 0; i < len(set) - remainder; i += size {
 		splits = append(splits, set[i:i+size])
 		complement := append(Set{}, set[:i]...)
-		complement = append(complement, set[i+1:]...)
+		complement = append(complement, set[i+size:]...)
 		complements = append(complements, complement)
 	}
 
