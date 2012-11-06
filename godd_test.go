@@ -12,8 +12,6 @@ type TestInput struct {
 
 func (inp *TestInput) Test(index []int) bool {
 	tot := len(index) + 1
-
-	fmt.Println(inp.Compose(index), ": pass=", tot%2==0)
 	return tot % 2 == 0
 }
 
@@ -26,12 +24,22 @@ func (inp *TestInput) Compose(index []int) string {
 	for _ = range index {
 		str += "1+"
 	}
-	return str + "1"
+	return str + "   1"
 }
 
 func TestMinFail(t *testing.T) {
 	inp := &TestInput{n: 8}
+	run := &Run{Inp: inp}
 
-	minimal := MinFail(inp)
-	fmt.Println(inp.Compose(minimal))
+	run.MinFail()
+
+	for i, hist := range run.Hists {
+		result := "PASS"
+		if !hist.Passed {
+			result = "FAIL"
+		}
+		fmt.Printf("hist %v (%v): %v %v\n", i, result, hist.Set, inp.Compose(hist.Set))
+	}
+
+	fmt.Printf("minimal failing input: %v\n", inp.Compose(run.Minimal))
 }

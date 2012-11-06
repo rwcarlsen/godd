@@ -1,63 +1,67 @@
 
 package godd
 
-import (
-	"fmt"
-)
+import "fmt"
 
 type Input interface {
 	Test([]int) bool
 	Len() int
 }
 
-func MinFail(inp Input) []int {
-	m := &minner{inp: inp}
-	return m.ddmin(intRange(inp.Len()), 2)
+type Hist struct {
+	Set []int
+	Passed bool
 }
 
-type minner struct {
-	inp Input
+type Run struct {
+	Inp Input
+	Minimal []int
+	Hists []*Hist
 }
 
-func (m *minner) ddmin(set []int, n int) []int {
-	fmt.Println("recurse --------------")
-	// reduce to subset
+func (r *Run) MinFail() error {
+	r.ddmin(intRange(r.Inp.Len()), 2)
+	return nil
+}
+
+
+func (r *Run) ddmin(set []int, n int) {
+	fmt.Println("recurse ----------")
 	subs, complements := split(set, n)
+	fmt.Println("subs: ", subs)
+	fmt.Println("complements: ", complements)
+
+	// reduce to subset
 	for _, sub := range subs {
-		if ! m.inp.Test(sub) {
-			m.hist = append(m.hist, sub)
-			return m.ddmin(sub, 2)
+		passed := r.Inp.Test(sub)
+		r.Hists = append(r.Hists, &Hist{Set: sub, Passed: passed})
+		hist := r.Hists[len(r.Hists)-1]
+		fmt.Printf("hist (%v): %v \n", passed, hist.Set)
+		if !passed {
+			r.Minimal = sub
+			r.ddmin(sub, 2)
+			return
 		}
 	}
 
 	// reduce to complement
 	for _, comp := range complements {
-		if ! m.inp.Test(comp) {
-			m.hist = append(m.hist, comp)
-			return m.ddmin(comp, max(n-1, 2))
+		passed := r.Inp.Test(comp)
+		r.Hists = append(r.Hists, &Hist{Set: comp, Passed: passed})
+		hist := r.Hists[len(r.Hists)-1]
+		fmt.Printf("hist (%v): %v \n", passed, hist.Set)
+		if ! passed {
+			r.Minimal = comp
+			r.ddmin(comp, max(n-1, 2))
+			return
 		}
 	}
 
 	// increase granularity
 	if n < len(set) {
-		return m.ddmin(set, min(len(set), 2 * n))
+		r.ddmin(set, min(len(set), 2 * n))
+		return
 	}
-
-	return set
-}
-
-func min(x, y int) int {
-	if x < y {
-		return x
-	}
-	return y
-}
-
-func max(x, y int) int {
-	if x > y {
-		return x
-	}
-	return y
 }
 
 func split(set []int, n int) ([][]int, [][]int) {
@@ -65,7 +69,7 @@ func split(set []int, n int) ([][]int, [][]int) {
 
 	splits := [][]int{}
 	complements := [][]int{}
-	for i := 0; i < n - remainder; i += size {
+	for i := 0; i < len(set) - remainder; i += size {
 		splits = append(splits, set[i:i+size])
 		complement := append([]int{}, set[:i]...)
 		complement = append(complement, set[i+1:]...)
@@ -85,5 +89,19 @@ func intRange(n int) []int {
 		r[i] = i
 	}
 	return r
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	}
+	return y
 }
 
