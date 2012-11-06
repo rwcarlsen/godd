@@ -44,18 +44,20 @@ type Run struct {
 
 }
 
-func (r *Run) MinFail() error {
+func  MinFail(inp Input) (*Run, error) {
   Log.Println("--------------------- begin test ----------------------")
-  r.tested = make(map[string]bool)
-  initialSet := intRange(r.Inp.Len())
 
-  if passed := r.Inp.Test(initialSet); passed {
-    return errors.New("godd: Test passes with all deltas applied")
+  r := &Run{Inp: inp}
+  r.tested = make(map[string]bool)
+  initialSet := intRange(inp.Len())
+
+  if passed := inp.Test(initialSet); passed {
+    return nil, errors.New("godd: Test passes with all deltas applied")
   }
 
   r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
-	return nil
+	return r, nil
 }
 
 func (r *Run) ddmin(set Set, n int) {

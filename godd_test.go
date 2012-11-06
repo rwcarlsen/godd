@@ -29,7 +29,6 @@ func (inp *TestInput) Compose(index Set) string {
 func TestMinFail(t *testing.T) {
 	testN(t, 12)
 	testN(t, 8)
-	testN(t, 3)
 	testN(t, 2)
 }
 
@@ -37,9 +36,9 @@ func testN(t *testing.T, n int) {
 	t.Logf("\n--------- input length %v ----------\n", n)
 
 	inp := &TestInput{n: n}
-	run := &Run{Inp: inp}
+	run, err := MinFail(inp)
 
-	if err := run.MinFail(); err != nil {
+	if err != nil {
     t.Errorf("FAILED: %v", err)
     return
   }
