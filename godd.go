@@ -2,10 +2,23 @@
 package godd
 
 import (
+  "os"
   "fmt"
   "log"
   "errors"
 )
+
+var buf = buffer(true)
+var Log = log.New(buf, "godd: ", 0)
+
+type buffer bool
+
+func (b buffer) Write(p []byte) (n int, err error) {
+  if b {
+    return os.Stdout.Write(p)
+  }
+  return len(p), nil
+}
 
 type Set []int
 
@@ -32,7 +45,7 @@ type Run struct {
 }
 
 func (r *Run) MinFail() error {
-  log.Println("--------------------- begin test ----------------------")
+  Log.Println("--------------------- begin test ----------------------")
   r.tested = make(map[string]bool)
   initialSet := intRange(r.Inp.Len())
 
@@ -47,27 +60,27 @@ func (r *Run) MinFail() error {
 
 func (r *Run) ddmin(set Set, n int) {
 	subs, complements := split(set, n)
-  log.Println("--------- recurse ------------")
-  log.Println("subs: ", subs)
-  log.Println("complements: ", complements)
+  Log.Println("--------- recurse ------------")
+  Log.Println("subs: ", subs)
+  Log.Println("complements: ", complements)
 
 	// reduce to subset
   if nextSet := r.testSets(subs); nextSet != nil {
-      log.Println("reducing to subset...")
+      Log.Println("reducing to subset...")
 			r.ddmin(nextSet, 2)
       return
 	}
 
 	// reduce to complement
   if nextSet := r.testSets(complements); nextSet != nil {
-      log.Println("reducing to complement...")
+      Log.Println("reducing to complement...")
 			r.ddmin(nextSet, max(n-1, 2))
       return
 	}
 
 	// increase granularity
 	if n < len(set) {
-    log.Println("increase granularity...")
+    Log.Println("increase granularity...")
 		r.ddmin(set, min(len(set), 2 * n))
 	}
 }
