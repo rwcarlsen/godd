@@ -8,7 +8,7 @@ import (
 
 type TestInput int
 
-func (inp TestInput) Test(index Set) bool {
+func (inp TestInput) Passes(index Set) bool {
 	tot := len(index) + 1
 	return tot % 2 == 0
 }
@@ -19,7 +19,7 @@ func (inp TestInput) Len() int {
 
 type TestInput2 []int
 
-func (inp TestInput2) Test(index Set) bool {
+func (inp TestInput2) Passes(index Set) bool {
   for _, failPart := range inp {
     found := false
     for _, v := range index {

@@ -27,7 +27,7 @@ func (s Set) hashable() string {
 }
 
 type Input interface {
-	Test(Set) bool
+	Passes(Set) bool
 	Len() int
 }
 
@@ -51,7 +51,7 @@ func  MinFail(inp Input) (*Run, error) {
   r.tested = make(map[string]bool)
   initialSet := IntRange(inp.Len())
 
-  if passed := inp.Test(initialSet); passed {
+  if passed := inp.Passes(initialSet); passed {
     return nil, errors.New("godd: Test passes with all deltas applied")
   }
 
@@ -88,7 +88,7 @@ func (r *Run) ddmin(set Set, n int) {
 	}
 
   // handle case where empty set of deltas causes failure
-  //if empty := []int{}; r.Inp.Test(empty) == false {
+  //if empty := []int{}; r.Inp.Passes(empty) == false {
   //  r.Minimal = empty
   //}
 }
@@ -99,7 +99,7 @@ func (r *Run) testSets(sets []Set) (failed Set) {
       continue
     }
 
-    passed := r.Inp.Test(set)
+    passed := r.Inp.Passes(set)
 
     r.tested[set.hashable()] = true
 		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Passed: passed})
