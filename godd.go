@@ -1,8 +1,6 @@
 
 package godd
 
-import "fmt"
-
 type Input interface {
 	Test([]int) bool
 	Len() int
@@ -26,17 +24,12 @@ func (r *Run) MinFail() error {
 
 
 func (r *Run) ddmin(set []int, n int) {
-	fmt.Println("recurse ----------")
 	subs, complements := split(set, n)
-	fmt.Println("subs: ", subs)
-	fmt.Println("complements: ", complements)
 
 	// reduce to subset
 	for _, sub := range subs {
 		passed := r.Inp.Test(sub)
 		r.Hists = append(r.Hists, &Hist{Set: sub, Passed: passed})
-		hist := r.Hists[len(r.Hists)-1]
-		fmt.Printf("hist (%v): %v \n", passed, hist.Set)
 		if !passed {
 			r.Minimal = sub
 			r.ddmin(sub, 2)
@@ -48,8 +41,6 @@ func (r *Run) ddmin(set []int, n int) {
 	for _, comp := range complements {
 		passed := r.Inp.Test(comp)
 		r.Hists = append(r.Hists, &Hist{Set: comp, Passed: passed})
-		hist := r.Hists[len(r.Hists)-1]
-		fmt.Printf("hist (%v): %v \n", passed, hist.Set)
 		if ! passed {
 			r.Minimal = comp
 			r.ddmin(comp, max(n-1, 2))
