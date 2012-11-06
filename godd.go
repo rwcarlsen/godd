@@ -49,7 +49,7 @@ func  MinFail(inp Input) (*Run, error) {
 
   r := &Run{Inp: inp}
   r.tested = make(map[string]bool)
-  initialSet := intRange(inp.Len())
+  initialSet := IntRange(inp.Len())
 
   if passed := inp.Test(initialSet); passed {
     return nil, errors.New("godd: Test passes with all deltas applied")
@@ -132,7 +132,7 @@ func split(set Set, n int) ([]Set, []Set) {
 	return splits, complements
 }
 
-func intRange(n int) Set {
+func IntRange(n int) Set {
 	r := make(Set, n)
 	for i := 0; i < n; i++ {
 		r[i] = i
