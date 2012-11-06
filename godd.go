@@ -8,7 +8,7 @@ import (
   "errors"
 )
 
-var buf = buffer(true)
+var buf = buffer(false)
 var Log = log.New(buf, "godd: ", 0)
 
 type buffer bool
