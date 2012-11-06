@@ -84,7 +84,13 @@ func (r *Run) ddmin(set Set, n int) {
 	if n < len(set) {
     Log.Println("increase granularity...")
 		r.ddmin(set, min(len(set), 2 * n))
+    return
 	}
+
+  // handle case where empty set of deltas causes failure
+  //if empty := []int{}; r.Inp.Test(empty) == false {
+  //  r.Minimal = empty
+  //}
 }
 
 func (r *Run) testSets(sets []Set) (failed Set) {
