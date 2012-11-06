@@ -4,6 +4,7 @@ package godd
 import (
   "fmt"
   "log"
+  "errors"
 )
 
 type Set []int
@@ -33,7 +34,14 @@ type Run struct {
 func (r *Run) MinFail() error {
   log.Println("--------------------- begin test ----------------------")
   r.tested = make(map[string]bool)
-	r.ddmin(intRange(r.Inp.Len()), 2)
+  initialSet := intRange(r.Inp.Len())
+
+  if passed := r.Inp.Test(initialSet); passed {
+    return errors.New("godd: Test passes with all deltas applied")
+  }
+
+  r.Minimal = initialSet
+	r.ddmin(initialSet, 2)
 	return nil
 }
 
