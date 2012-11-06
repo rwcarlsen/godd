@@ -32,60 +32,47 @@ func (r *Run) MinFail() error {
 	return nil
 }
 
-func testSets(sets []Set, n int) (passed bool) {
-	for _, set := range sets {
-    if r.tested[set.hashable()] {
-      continue
-    }
-    passed = r.Inp.Test(sub)
-    r.tested[sub.hashable()] = true
-		r.Hists = append(r.Hists, &Hist{DeltaInd: sub, Passed: passed})
-		if !passed {
-			r.Minimal = sub
-      return false
-		}
-	}
-  return true
-}
-
 func (r *Run) ddmin(set Set, n int) {
 	subs, complements := split(set, n)
+  fmt.Println("--------- recurse ------------")
+  fmt.Println("subs: ", subs)
+  fmt.Println("complements: ", complements)
 
 	// reduce to subset
-	for _, sub := range subs {
-    if r.tested[sub.hashable()] {
-      continue
-    }
-    passed := r.Inp.Test(sub)
-    r.tested[sub.hashable()] = true
-		r.Hists = append(r.Hists, &Hist{DeltaInd: sub, Passed: passed})
-		if !passed {
-			r.Minimal = sub
-			r.ddmin(sub, 2)
-			return
-		}
+  if nextSet := r.testSets(subs); nextSet != nil {
+			r.ddmin(nextSet, 2)
+      return
 	}
 
 	// reduce to complement
-	for _, comp := range complements {
-    if r.tested[comp.hashable()] {
-      continue
-    }
-		passed := r.Inp.Test(comp)
-    r.tested[comp.hashable()] = true
-		r.Hists = append(r.Hists, &Hist{DeltaInd: comp, Passed: passed})
-		if ! passed {
-			r.Minimal = comp
-			r.ddmin(comp, max(n-1, 2))
-			return
-		}
+  if nextSet := r.testSets(complements); nextSet != nil {
+			r.ddmin(nextSet, max(n-1, 2))
+      return
 	}
 
 	// increase granularity
 	if n < len(set) {
 		r.ddmin(set, min(len(set), 2 * n))
-		return
 	}
+}
+
+func (r *Run) testSets(sets []Set) (failed Set) {
+	for _, set := range sets {
+    if r.tested[set.hashable()] {
+      continue
+    }
+
+    passed := r.Inp.Test(set)
+
+    r.tested[set.hashable()] = true
+		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Passed: passed})
+
+		if !passed {
+			r.Minimal = set
+      return set
+		}
+	}
+  return nil
 }
 
 func split(set Set, n int) ([]Set, []Set) {

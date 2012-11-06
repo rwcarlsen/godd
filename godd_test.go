@@ -51,6 +51,6 @@ func testN(t *testing.T, n int) {
 	t.Logf("minimal failing input: %v\n", inp.Compose(run.Minimal))
 
 	if len(run.Minimal) != 2 {
-		t.Errorf("minimal output: got %v, expected [# #]", run.Minimal)
+		t.Errorf("FAILED:: minimal output: got %v, expected [# #]", run.Minimal)
 	}
 }
