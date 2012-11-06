@@ -76,9 +76,10 @@ func split(set []int, n int) ([][]int, [][]int) {
 		complements = append(complements, complement)
 	}
 
-	index := len(set)-1-remainder
-	splits = append(splits, set[index:])
-	complements = append(complements, set[:index])
+	if index := len(set)-remainder; index < len(set)-1 {
+		splits = append(splits, set[index:])
+		complements = append(complements, set[:index])
+	}
 
 	return splits, complements
 }
