@@ -39,8 +39,8 @@ func (wb *Word) BuildInput(set godd.Set) []byte {
     inputWords[i] = wb.words[index]
   }
 
-  input := bytes.Join(inputWords, []byte(" "))
-  return append(input, byte('\n'))
+  input := bytes.Join(inputWords, []byte(""))
+  return input
 }
 
 func (wb *Word) Len() int {
