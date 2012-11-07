@@ -27,7 +27,8 @@ func ByWord(r io.Reader) (*Word, error) {
   if err != nil {
     return nil, err
   }
-  return &Word{words: bytes.Fields(data)}, nil
+  words := splitAny(data, "\n\t ")
+  return &Word{words: words}, nil
 }
 
 func (wb *Word) BuildInput(set godd.Set) []byte {
@@ -114,5 +115,26 @@ func (t *TestCase) Passes(set godd.Set) bool {
 
 func (t *TestCase) Len() int {
   return t.B.Len()
+}
+
+// splitAny splits a byte slice at every occurence of any char in chars -
+// collapsing consecutive char delimiters onto the preceding split chunk.
+func splitAny(s []byte, chars string) [][]byte {
+
+  beg := 0
+  chunks := [][]byte{}
+  for i, b := range s {
+    for _, c := range chars {
+      if b == byte(c) {
+        nextNotWhite := bytes.IndexAny(s[i+1:i+1], chars) == -1
+        if nextNotWhite {
+          chunks = append(chunks, s[beg:i+1])
+        }
+        beg = i
+        break
+      }
+    }
+  }
+  return chunks
 }
 
