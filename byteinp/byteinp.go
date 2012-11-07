@@ -120,21 +120,21 @@ func (t *TestCase) Len() int {
 // splitAny splits a byte slice at every occurence of any char in chars -
 // collapsing consecutive char delimiters onto the preceding split chunk.
 func splitAny(s []byte, chars string) [][]byte {
-
   beg := 0
   chunks := [][]byte{}
   for i, b := range s {
     for _, c := range chars {
       if b == byte(c) {
-        nextNotWhite := bytes.IndexAny(s[i+1:i+1], chars) == -1
+        end := i + 1
+        nextNotWhite := bytes.IndexAny(s[end:end+1], chars) == -1
         if nextNotWhite {
-          chunks = append(chunks, s[beg:i+1])
+          chunks = append(chunks, s[beg:end])
+          beg = end
         }
-        beg = i
         break
       }
     }
   }
-  return chunks
+  return append(chunks, s[beg:])
 }
 
