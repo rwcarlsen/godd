@@ -30,20 +30,20 @@ func ByWord(r io.Reader) (*Word, error) {
   return &Word{words: bytes.Fields(data)}, nil
 }
 
-func (wi *Word) BuildInput(set godd.Set) []byte {
+func (wb *Word) BuildInput(set godd.Set) []byte {
   sort.Ints([]int(set))
 
   inputWords := make([][]byte, len(set))
   for i, index := range set {
-    inputWords[i] = wi.words[index]
+    inputWords[i] = wb.words[index]
   }
 
   input := bytes.Join(inputWords, []byte(" "))
   return append(input, byte('\n'))
 }
 
-func (wi *Word) Len() int {
-  return len(wi.words)
+func (wb *Word) Len() int {
+  return len(wb.words)
 }
 
 type Char struct {
@@ -58,19 +58,48 @@ func ByChar(r io.Reader) (*Char, error) {
   return &Char{data: data}, nil
 }
 
-func (wi *Char) BuildInput(set godd.Set) []byte {
+func (cb *Char) BuildInput(set godd.Set) []byte {
   sort.Ints([]int(set))
 
   input := make([]byte, len(set))
   for i, index := range set {
-    input[i] = wi.data[index]
+    input[i] = cb.data[index]
   }
 
   return input
 }
 
-func (wi *Char) Len() int {
-  return len(wi.data)
+func (cb *Char) Len() int {
+  return len(cb.data)
+}
+
+type Line struct {
+  lines [][]byte
+}
+
+func ByLine(r io.Reader) (*Line, error) {
+  data, err := ioutil.ReadAll(r)
+  if err != nil {
+    return nil, err
+  }
+  lines := bytes.Split(data, []byte("\n"))
+  return &Line{lines: lines}, nil
+}
+
+func (lb *Line) BuildInput(set godd.Set) []byte {
+  sort.Ints([]int(set))
+
+  inputLines := make([][]byte, len(set))
+  for i, index := range set {
+    inputLines[i] = lb.lines[index]
+  }
+
+  input := bytes.Join(inputLines, []byte("\n"))
+  return append(input, byte('\n'))
+}
+
+func (lb *Line) Len() int {
+  return len(lb.lines)
 }
 
 type TestCase struct {
