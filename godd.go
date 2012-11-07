@@ -11,6 +11,8 @@ import (
 var buf = buffer(false)
 var Log = log.New(buf, "godd: ", 0)
 
+var Concurrent = true
+
 type buffer bool
 
 func (b buffer) Write(p []byte) (n int, err error) {
@@ -62,54 +64,55 @@ func  MinFail(inp Input) (*Run, error) {
 
 func (r *Run) ddmin(set Set, n int) {
 	subs, complements := split(set, n)
-  Log.Println("--------- recurse ------------")
-  Log.Println("subs: ", subs)
-  Log.Println("complements: ", complements)
 
 	// reduce to subset
   if nextSet := r.testSets(subs); nextSet != nil {
-      Log.Println("reducing to subset...")
 			r.ddmin(nextSet, 2)
       return
 	}
 
 	// reduce to complement
   if nextSet := r.testSets(complements); nextSet != nil {
-      Log.Println("reducing to complement...")
 			r.ddmin(nextSet, max(n-1, 2))
       return
 	}
 
 	// increase granularity
 	if n < len(set) {
-    Log.Println("increase granularity...")
 		r.ddmin(set, min(len(set), 2 * n))
     return
 	}
-
-  // handle case where empty set of deltas causes failure
-  //if empty := []int{}; r.Inp.Passes(empty) == false {
-  //  r.Minimal = empty
-  //}
 }
 
 func (r *Run) testSets(sets []Set) (failed Set) {
-	for _, set := range sets {
-    if r.tested[set.hashable()] {
-      continue
+  for _, set := range sets {
+    select {
+    case r.workerIn <- set:
+    case hist := <-r.workerOut:
+      r.Hists = append(r.Hists, hist)
+      r.Minimal = hist.DeltaInd
+      return hist.DeltaInd
     }
+  }
+}
 
-    passed := r.Inp.Passes(set)
+func (r *Run) worker(out chan *Hist, in chan Set) {
+  for {
+    select {
+    case set := <- in:
+      if r.tested[set.hashable()] {
+        continue
+      }
+      passed := r.Inp.Passes(set)
 
-    r.tested[set.hashable()] = true
-		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Passed: passed})
-
-		if !passed {
-			r.Minimal = set
-      return set
-		}
-	}
-  return nil
+      r.tested[set.hashable()] = true
+      if !passed {
+        out <- &Hist{DeltaInd: set, Passed: passed})
+      }
+      continue
+    case <- kill:
+      return
+  }
 }
 
 func split(set Set, n int) ([]Set, []Set) {
