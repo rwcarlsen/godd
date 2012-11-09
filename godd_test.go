@@ -4,6 +4,7 @@ package godd
 import (
 	"testing"
   "fmt"
+  "math/rand"
 )
 
 type TestInput int
@@ -35,15 +36,20 @@ func (inp TestInput2) Passes(index Set) bool {
   return false
 }
 
-func (inp TestInput2) Len() int {
-	return 50
+func (_ TestInput2) Len() int {
+	return 10000
 }
 
 func TestMinFail(t *testing.T) {
 	test1(t, TestInput(12))
 	test1(t, TestInput(8))
 	test1(t, TestInput(2))
-	test2(t, TestInput2([]int{1, 5, 6, 19, 47}))
+
+  inp := make([]int, 100)
+  for i := 0; i < 100; i++ {
+    inp[i] = rand.Intn(10000)
+  }
+	test2(t, TestInput2(inp))
 }
 
 func test1(t *testing.T, inp TestInput) {
@@ -55,14 +61,6 @@ func test1(t *testing.T, inp TestInput) {
     t.Errorf("FAILED: %v", err)
     return
   }
-
-	for i, hist := range run.Hists {
-		result := "PASS"
-		if !hist.Passed {
-			result = "FAIL"
-		}
-		t.Logf("hist %v (%v): %v \n", i, result, hist.DeltaInd)
-	}
 
 	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
 
@@ -81,17 +79,10 @@ func test2(t *testing.T, inp TestInput2) {
     return
   }
 
-	for i, hist := range run.Hists {
-		result := "PASS"
-		if !hist.Passed {
-			result = "FAIL"
-		}
-		t.Logf("hist %v (%v): %v \n", i, result, hist.DeltaInd)
-	}
-
 	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
 
 	if fmt.Sprint(run.Minimal) != fmt.Sprint(inp) {
 		t.Errorf("FAILED:: minimal output: got %v, expected %v", run.Minimal, inp)
 	}
 }
+
