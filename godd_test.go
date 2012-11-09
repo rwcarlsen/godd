@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"testing"
+	"sort"
 )
 
 type TestInput int
@@ -48,6 +49,7 @@ func TestMinFail(t *testing.T) {
 	for i := 0; i < 100; i++ {
 		inp[i] = rand.Intn(10000)
 	}
+	sort.Ints(inp)
 	test2(t, TestInput2(inp))
 }
 
@@ -81,6 +83,6 @@ func test2(t *testing.T, inp TestInput2) {
 	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
 
 	if fmt.Sprint(run.Minimal) != fmt.Sprint(inp) {
-		t.Errorf("FAILED:: minimal output: got %v, expected %v", run.Minimal, inp)
+		t.Errorf("FAILED:: minimal output: expected %v", inp)
 	}
 }

@@ -85,10 +85,10 @@ func (r *Run) ddmin(set Set, n int) {
 		return
 	}
 
-	// handle case where empty set of deltas causes failure
-	//if empty := []int{}; r.Inp.Passes(empty) == false {
-	//  r.Minimal = empty
-	//}
+	// handle case where empty set of deltas causes failure of interest
+	if empty := []int{}; r.Inp.Passes(empty) == false {
+	  r.Minimal = empty
+	}
 }
 
 func (r *Run) testSets(sets []Set) (failed Set) {
