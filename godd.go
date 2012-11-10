@@ -2,13 +2,10 @@ package godd
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"os"
 )
 
 var buf = buffer(false)
-var Log = log.New(buf, "godd: ", 0)
 
 type buffer bool
 
@@ -21,8 +18,12 @@ func (b buffer) Write(p []byte) (n int, err error) {
 
 type Set []int
 
-func (s Set) hashable() string {
-	return fmt.Sprint(s)
+func (s Set) hash() string {
+	h := make([]byte, len(s))
+	for i, v := range s {
+		h[i] = byte(v)
+	}
+	return string(h)
 }
 
 type Input interface {
@@ -43,8 +44,6 @@ type Run struct {
 }
 
 func MinFail(inp Input) (*Run, error) {
-	Log.Println("--------------------- begin test ----------------------")
-
 	r := &Run{Inp: inp}
 	r.tested = make(map[string]bool)
 	initialSet := IntRange(inp.Len())
@@ -60,27 +59,21 @@ func MinFail(inp Input) (*Run, error) {
 
 func (r *Run) ddmin(set Set, n int) {
 	subs, complements := split(set, n)
-	Log.Println("--------- recurse ------------")
-	Log.Println("subs: ", subs)
-	Log.Println("complements: ", complements)
 
 	// reduce to subset
 	if nextSet := r.testSets(subs); nextSet != nil {
-		Log.Println("reducing to subset...")
 		r.ddmin(nextSet, 2)
 		return
 	}
 
 	// reduce to complement
 	if nextSet := r.testSets(complements); nextSet != nil {
-		Log.Println("reducing to complement...")
 		r.ddmin(nextSet, max(n-1, 2))
 		return
 	}
 
 	// increase granularity
 	if n < len(set) {
-		Log.Println("increase granularity...")
 		r.ddmin(set, min(len(set), 2*n))
 		return
 	}
@@ -93,13 +86,12 @@ func (r *Run) ddmin(set Set, n int) {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	for _, set := range sets {
-		if r.tested[set.hashable()] {
+		if r.tested[set.hash()] {
 			continue
 		}
+		r.tested[set.hash()] = true
 
 		passed := r.Inp.Passes(set)
-
-		r.tested[set.hashable()] = true
 		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Passed: passed})
 
 		if !passed {
@@ -113,13 +105,15 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 func split(set Set, n int) ([]Set, []Set) {
 	size, remainder := len(set)/n, len(set)%n
 
-	splits := []Set{}
-	complements := []Set{}
+	splits := make([]Set, n)
+	complements := make([]Set, n)
+	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
-		splits = append(splits, set[i:i+size])
+		splits[count] = set[i:i+size]
 		complement := append(Set{}, set[:i]...)
 		complement = append(complement, set[i+size:]...)
-		complements = append(complements, complement)
+		complements[count] = complement
+		count++
 	}
 
 	if index := len(set) - remainder; index < len(set)-1 {
