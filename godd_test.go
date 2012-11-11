@@ -8,9 +8,11 @@ import (
 
 type TestInput int
 
-func (inp TestInput) Passes(index Set) bool {
-	tot := len(index) + 1
-	return tot%2 == 0
+func (inp TestInput) Test(index Set) Outcome {
+	if len(index) % 2 == 0 {
+		return Failed
+	}
+	return Passed
 }
 
 func (inp TestInput) Len() int {
@@ -19,7 +21,7 @@ func (inp TestInput) Len() int {
 
 type TestInput2 []int
 
-func (inp TestInput2) Passes(index Set) bool {
+func (inp TestInput2) Test(index Set) Outcome {
 	for _, failPart := range inp {
 		found := false
 		for _, v := range index {
@@ -29,14 +31,14 @@ func (inp TestInput2) Passes(index Set) bool {
 			}
 		}
 		if !found {
-			return true
+			return Passed
 		}
 	}
-	return false
+	return Failed
 }
 
 func (_ TestInput2) Len() int {
-	return 20000
+	return 10000
 }
 
 func TestMinFail(t *testing.T) {
@@ -44,9 +46,9 @@ func TestMinFail(t *testing.T) {
 	test1(t, TestInput(8))
 	test1(t, TestInput(2))
 
-	inp := make([]int, 200)
-	for i := 0; i < 200; i++ {
-		inp[i] = rand.Intn(20000)
+	inp := make([]int, 100)
+	for i := 0; i < 100; i++ {
+		inp[i] = rand.Intn(10000)
 	}
 	sort.Ints(inp)
 	test2(t, TestInput2(inp))
@@ -80,8 +82,4 @@ func test2(t *testing.T, inp TestInput2) {
 	}
 
 	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
-
-	//if fmt.Sprint(run.Minimal) != fmt.Sprint(inp) {
-	//	t.Errorf("FAILED:: minimal output: expected %v", inp)
-	//}
 }

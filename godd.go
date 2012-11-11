@@ -7,6 +7,23 @@ import (
 
 var buf = buffer(false)
 
+type Outcome int
+
+func (out Outcome) String() string {
+	switch out {
+	case Passed: return "PASS"
+	case Failed: return "FAIL"
+	case Undetermined: return "UNDET"
+	}
+	panic("using invalid outcome")
+}
+
+const (
+	Passed Outcome = iota
+	Failed
+	Undetermined
+)
+
 type buffer bool
 
 func (b buffer) Write(p []byte) (n int, err error) {
@@ -27,13 +44,13 @@ func (s Set) hash() string {
 }
 
 type Input interface {
-	Passes(Set) bool
+	Test(Set) Outcome
 	Len() int
 }
 
 type Hist struct {
 	DeltaInd Set
-	Passed   bool
+	Out   Outcome
 }
 
 type Run struct {
@@ -48,7 +65,7 @@ func MinFail(inp Input) (*Run, error) {
 	r.tested = make(map[string]bool)
 	initialSet := IntRange(inp.Len())
 
-	if passed := inp.Passes(initialSet); passed {
+	if inp.Test(initialSet) != Failed {
 		return nil, errors.New("godd: Test passes with all deltas applied")
 	}
 
@@ -79,7 +96,7 @@ func (r *Run) ddmin(set Set, n int) {
 	}
 
 	// handle case where empty set of deltas causes failure of interest
-	if empty := []int{}; r.Inp.Passes(empty) == false {
+	if empty := []int{}; r.Inp.Test(empty) == Failed {
 	  r.Minimal = empty
 	}
 }
@@ -91,10 +108,10 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		}
 		r.tested[set.hash()] = true
 
-		passed := r.Inp.Passes(set)
-		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Passed: passed})
+		result := r.Inp.Test(set)
+		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Out: result})
 
-		if !passed {
+		if result == Failed {
 			r.Minimal = set
 			return set
 		}
