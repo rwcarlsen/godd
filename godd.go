@@ -33,14 +33,18 @@ func (b buffer) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
+type setHash string
+
+type setCache map[setHash]bool
+
 type Set []int
 
-func (s Set) hash() string {
+func (s Set) hash() setHash {
 	h := make([]byte, len(s))
 	for i, v := range s {
 		h[i] = byte(v)
 	}
-	return string(h)
+	return setHash(h)
 }
 
 type Input interface {
@@ -57,12 +61,12 @@ type Run struct {
 	Inp     Input
 	Minimal Set
 	Hists   []*Hist
-	tested  map[string]bool
+	tested  setCache
 }
 
 func MinFail(inp Input) (*Run, error) {
 	r := &Run{Inp: inp}
-	r.tested = make(map[string]bool)
+	r.tested = make(setCache)
 	initialSet := IntRange(inp.Len())
 
 	if inp.Test(initialSet) != Failed {
