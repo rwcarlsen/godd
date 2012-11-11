@@ -125,21 +125,20 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 
 func split(set Set, n int) ([]Set, []Set) {
 	size, remainder := len(set)/n, len(set)%n
+	splits, complements := make([]Set, n), make([]Set, n)
 
-	splits := make([]Set, n)
-	complements := make([]Set, n)
 	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
 		splits[count] = set[i:i+size]
-		complement := append(Set{}, set[:i]...)
-		complement = append(complement, set[i+size:]...)
+		complement := make(Set, 0, len(set) - size)
+		complement = append(append(complement, set[:i]...), set[i+size:]...)
 		complements[count] = complement
 		count++
 	}
 
 	if index := len(set) - remainder; index < len(set)-1 {
-		splits = append(splits, set[index:])
-		complements = append(complements, set[:index])
+		splits[n-1] = set[index:]
+		complements[n-1] = set[:index]
 	}
 
 	return splits, complements
