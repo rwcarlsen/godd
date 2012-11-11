@@ -38,7 +38,7 @@ func (inp TestInput2) Test(index Set) Outcome {
 }
 
 func (_ TestInput2) Len() int {
-	return 100
+	return 20000
 }
 
 func TestMinFail(t *testing.T) {
@@ -46,9 +46,9 @@ func TestMinFail(t *testing.T) {
 	test1(t, TestInput(8))
 	test1(t, TestInput(2))
 
-	inp := make([]int, 10)
-	for i := 0; i < 10; i++ {
-		inp[i] = rand.Intn(100)
+	inp := make([]int, 200)
+	for i := 0; i < 200; i++ {
+		inp[i] = rand.Intn(20000)
 	}
 	sort.Ints(inp)
 	test2(t, TestInput2(inp))

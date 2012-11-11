@@ -130,7 +130,9 @@ func split(set Set, n int) ([]Set, []Set) {
 	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
 		splits[count] = set[i:i+size]
-		complements[count] = append(set[:i], set[i+size:]...)
+		complement := make(Set, 0, len(set) - size)
+		complement = append(append(complement, set[:i]...), set[i+size:]...)
+		complements[count] = complement
 		count++
 	}
 
