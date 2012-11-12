@@ -17,48 +17,48 @@ type Tester interface {
 	Test(input []byte) godd.Outcome
 }
 
-type Word struct {
+type word struct {
 	words [][]byte
 }
 
-func ByWord(r io.Reader) (*Word, error) {
+func ByWord(r io.Reader) (Builder, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 	words := splitAny(data, "\n\t ")
-	return &Word{words: words}, nil
+	return &word{words: words}, nil
 }
 
-func (wb *Word) BuildInput(set godd.Set) []byte {
+func (wb *word) BuildInput(set godd.Set) []byte {
 	sort.Ints([]int(set))
 
-	inputWords := make([][]byte, len(set))
+	inputwords := make([][]byte, len(set))
 	for i, index := range set {
-		inputWords[i] = wb.words[index]
+		inputwords[i] = wb.words[index]
 	}
 
-	input := bytes.Join(inputWords, []byte(""))
+	input := bytes.Join(inputwords, []byte(""))
 	return input
 }
 
-func (wb *Word) Len() int {
+func (wb *word) Len() int {
 	return len(wb.words)
 }
 
-type Char struct {
+type char struct {
 	data []byte
 }
 
-func ByChar(r io.Reader) (*Char, error) {
+func ByChar(r io.Reader) (Builder, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
-	return &Char{data: data}, nil
+	return &char{data: data}, nil
 }
 
-func (cb *Char) BuildInput(set godd.Set) []byte {
+func (cb *char) BuildInput(set godd.Set) []byte {
 	sort.Ints([]int(set))
 
 	input := make([]byte, len(set))
@@ -69,36 +69,36 @@ func (cb *Char) BuildInput(set godd.Set) []byte {
 	return input
 }
 
-func (cb *Char) Len() int {
+func (cb *char) Len() int {
 	return len(cb.data)
 }
 
-type Line struct {
+type line struct {
 	lines [][]byte
 }
 
-func ByLine(r io.Reader) (*Line, error) {
+func ByLine(r io.Reader) (Builder, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
 	lines := bytes.Split(data, []byte("\n"))
-	return &Line{lines: lines}, nil
+	return &line{lines: lines}, nil
 }
 
-func (lb *Line) BuildInput(set godd.Set) []byte {
+func (lb *line) BuildInput(set godd.Set) []byte {
 	sort.Ints([]int(set))
 
-	inputLines := make([][]byte, len(set))
+	inputlines := make([][]byte, len(set))
 	for i, index := range set {
-		inputLines[i] = lb.lines[index]
+		inputlines[i] = lb.lines[index]
 	}
 
-	input := bytes.Join(inputLines, []byte("\n"))
+	input := bytes.Join(inputlines, []byte("\n"))
 	return append(input, byte('\n'))
 }
 
-func (lb *Line) Len() int {
+func (lb *line) Len() int {
 	return len(lb.lines)
 }
 

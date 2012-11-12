@@ -2,14 +2,14 @@ package godd
 
 import (
 	"math/rand"
-	"testing"
 	"sort"
+	"testing"
 )
 
 type TestInput int
 
 func (inp TestInput) Test(index Set) Outcome {
-	if len(index) % 2 == 0 {
+	if len(index)%2 == 0 {
 		return Failed
 	}
 	return Passed

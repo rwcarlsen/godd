@@ -11,9 +11,12 @@ type Outcome int
 
 func (out Outcome) String() string {
 	switch out {
-	case Passed: return "PASS"
-	case Failed: return "FAIL"
-	case Undetermined: return "UNDET"
+	case Passed:
+		return "PASS"
+	case Failed:
+		return "FAIL"
+	case Undetermined:
+		return "UNDET"
 	}
 	panic("using invalid outcome")
 }
@@ -54,7 +57,7 @@ type Input interface {
 
 type Hist struct {
 	DeltaInd Set
-	Out   Outcome
+	Out      Outcome
 }
 
 type Run struct {
@@ -101,7 +104,7 @@ func (r *Run) ddmin(set Set, n int) {
 
 	// handle case where empty set of deltas causes failure of interest
 	if empty := []int{}; r.Inp.Test(empty) == Failed {
-	  r.Minimal = empty
+		r.Minimal = empty
 	}
 }
 
@@ -129,8 +132,8 @@ func split(set Set, n int) ([]Set, []Set) {
 
 	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
-		splits[count] = set[i:i+size]
-		complement := make(Set, 0, len(set) - size)
+		splits[count] = set[i : i+size]
+		complement := make(Set, 0, len(set)-size)
 		complement = append(append(complement, set[:i]...), set[i+size:]...)
 		complements[count] = complement
 		count++
