@@ -14,7 +14,7 @@ type Builder interface {
 }
 
 type Tester interface {
-	Test(input []byte) bool
+	Test(input []byte) godd.Outcome
 }
 
 type Word struct {
@@ -107,7 +107,7 @@ type TestCase struct {
 	B Builder
 }
 
-func (t *TestCase) Passes(set godd.Set) bool {
+func (t *TestCase) Test(set godd.Set) godd.Outcome {
 	input := t.B.BuildInput(set)
 	return t.T.Test(input)
 }
