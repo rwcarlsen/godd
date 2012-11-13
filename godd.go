@@ -18,13 +18,33 @@ func (out Outcome) String() string {
 	case Undetermined:
 		return "UNDET"
 	}
-	panic("using invalid outcome")
+	panic("invalid outcome")
 }
 
 const (
 	Passed Outcome = iota
 	Failed
 	Undetermined
+)
+
+type Operation int
+
+func (op Operation) String() string {
+	switch out {
+	case ReduceToSubset:
+		return "reduce to subset"
+	case ReduceToComplement:
+		return "reduce to complement"
+	case IncrGranularity:
+		return "increase granularity"
+	}
+	panic("invalid operation")
+}
+
+const (
+	ReduceToSubset Operation = iota
+	ReduceToComplement
+	IncrGranularity
 )
 
 type buffer bool
