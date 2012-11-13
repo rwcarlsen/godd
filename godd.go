@@ -31,6 +31,8 @@ type Operation int
 
 func (op Operation) String() string {
 	switch out {
+	case NoOp:
+		return "no-op"
 	case ReduceToSubset:
 		return "reduce to subset"
 	case ReduceToComplement:
@@ -42,7 +44,8 @@ func (op Operation) String() string {
 }
 
 const (
-	ReduceToSubset Operation = iota
+	NoOp = iota
+	ReduceToSubset Operation
 	ReduceToComplement
 	IncrGranularity
 )
@@ -76,8 +79,9 @@ type Input interface {
 }
 
 type Hist struct {
-	DeltaInd Set
+	Deltas	 Set
 	Out      Outcome
+	Op		 Operation
 }
 
 type Run struct {
@@ -87,7 +91,14 @@ type Run struct {
 	tested  setCache
 }
 
-func MinFail(inp Input) (*Run, error) {
+type Config int
+
+const (
+	KeepHist Config = 1 << iota
+)
+
+
+func MinFail(inp Input, config Config) (*Run, error) {
 	r := &Run{Inp: inp}
 	r.tested = make(setCache)
 	initialSet := IntRange(inp.Len())
@@ -136,7 +147,7 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		r.tested[set.hash()] = true
 
 		result := r.Inp.Test(set)
-		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Out: result})
+		r.Hists = append(r.Hists, &Hist{Deltas: set, Out: result})
 
 		if result == Failed {
 			r.Minimal = set
