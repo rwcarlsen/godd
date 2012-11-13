@@ -2,62 +2,7 @@ package godd
 
 import (
 	"errors"
-	"os"
 )
-
-var buf = buffer(false)
-
-type Outcome int
-
-func (out Outcome) String() string {
-	switch out {
-	case Passed:
-		return "PASS"
-	case Failed:
-		return "FAIL"
-	case Undetermined:
-		return "UNDET"
-	}
-	panic("invalid outcome")
-}
-
-const (
-	Passed Outcome = iota
-	Failed
-	Undetermined
-)
-
-type Operation int
-
-func (op Operation) String() string {
-	switch out {
-	case NoOp:
-		return "no-op"
-	case ReduceToSubset:
-		return "reduce to subset"
-	case ReduceToComplement:
-		return "reduce to complement"
-	case IncrGranularity:
-		return "increase granularity"
-	}
-	panic("invalid operation")
-}
-
-const (
-	NoOp = iota
-	ReduceToSubset Operation
-	ReduceToComplement
-	IncrGranularity
-)
-
-type buffer bool
-
-func (b buffer) Write(p []byte) (n int, err error) {
-	if b {
-		return os.Stdout.Write(p)
-	}
-	return len(p), nil
-}
 
 type setHash string
 
@@ -81,22 +26,44 @@ type Input interface {
 type Hist struct {
 	Deltas	 Set
 	Out      Outcome
-	Op		 Operation
 }
+
+const (
+	Passed Outcome = iota
+	Failed
+	Undetermined
+)
+
+type Outcome int
+
+func (out Outcome) String() string {
+	switch out {
+	case Passed:
+		return "PASS"
+	case Failed:
+		return "FAIL"
+	case Undetermined:
+		return "UNDET"
+	}
+	panic("invalid outcome")
+}
+
+type Config int
+
+const (
+	CkeepHist Config = 1 << iota
+  CcacheTests
+  Cdefault = CcacheTests
+)
 
 type Run struct {
 	Inp     Input
 	Minimal Set
 	Hists   []*Hist
 	tested  setCache
+  cacheTests bool
+  keepHist bool
 }
-
-type Config int
-
-const (
-	KeepHist Config = 1 << iota
-)
-
 
 func MinFail(inp Input, config Config) (*Run, error) {
 	r := &Run{Inp: inp}
@@ -106,6 +73,10 @@ func MinFail(inp Input, config Config) (*Run, error) {
 	if inp.Test(initialSet) != Failed {
 		return nil, errors.New("godd: Test passes with all deltas applied")
 	}
+
+  // get specs from config mask
+  r.cacheTests = CcacheTests & config != 0
+  r.keepHist = CkeepHist & config != 0
 
 	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
@@ -141,13 +112,18 @@ func (r *Run) ddmin(set Set, n int) {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	for _, set := range sets {
-		if r.tested[set.hash()] {
-			continue
-		}
-		r.tested[set.hash()] = true
+    if r.cacheTests {
+      if r.tested[set.hash()] {
+        continue
+      }
+      r.tested[set.hash()] = true
+    }
 
 		result := r.Inp.Test(set)
-		r.Hists = append(r.Hists, &Hist{Deltas: set, Out: result})
+
+    if r.keepHist {
+      r.Hists = append(r.Hists, &Hist{Deltas: set, Out: result})
+    }
 
 		if result == Failed {
 			r.Minimal = set

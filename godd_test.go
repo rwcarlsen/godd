@@ -6,20 +6,17 @@ import (
 	"testing"
 )
 
-type TestInput int
-
-func (inp TestInput) Test(index Set) Outcome {
-	if len(index)%2 == 0 {
-		return Failed
-	}
-	return Passed
-}
-
-func (inp TestInput) Len() int {
-	return int(inp)
-}
-
 type TestInput2 []int
+
+var staticInp []int
+
+func init() {
+	staticInp = make([]int, 200)
+	for i := 0; i < 200; i++ {
+		staticInp[i] = rand.Intn(15000)
+	}
+	sort.Ints(staticInp)
+}
 
 func (inp TestInput2) Test(index Set) Outcome {
 	for _, failPart := range inp {
@@ -38,48 +35,46 @@ func (inp TestInput2) Test(index Set) Outcome {
 }
 
 func (_ TestInput2) Len() int {
-	return 20000
+	return 15000
 }
 
 func TestMinFail(t *testing.T) {
-	test1(t, TestInput(12))
-	test1(t, TestInput(8))
-	test1(t, TestInput(2))
-
-	inp := make([]int, 200)
-	for i := 0; i < 200; i++ {
-		inp[i] = rand.Intn(20000)
-	}
-	sort.Ints(inp)
-	test2(t, TestInput2(inp))
-}
-
-func test1(t *testing.T, inp TestInput) {
-	t.Logf("\n--------- input length %v ----------\n", inp.Len())
-
-	run, err := MinFail(inp)
-
+	inp := TestInput2(staticInp)
+	run, err := MinFail(inp, Cdefault)
 	if err != nil {
 		t.Errorf("FAILED: %v", err)
 		return
 	}
-
-	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
-
-	if len(run.Minimal) != 0 {
-		t.Errorf("FAILED:: minimal output: got %v, expected []", run.Minimal)
-	}
-}
-
-func test2(t *testing.T, inp TestInput2) {
-	t.Logf("\n--------- input length %v ----------\n", inp.Len())
-
-	run, err := MinFail(inp)
-
-	if err != nil {
-		t.Errorf("FAILED: %v", err)
-		return
-	}
-
 	t.Logf("minimal failing input (%v iterations, len %v): %v\n", len(run.Hists), len(run.Minimal), run.Minimal)
+}
+
+func test(t *testing.T, inp TestInput2) {
+}
+
+func BenchmarkMinFail_NoCacheNoHist(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    inp := TestInput2(staticInp)
+    MinFail(inp, 0)
+  }
+}
+
+func BenchmarkMinFail_NoCacheHist(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    inp := TestInput2(staticInp)
+    MinFail(inp, CkeepHist)
+  }
+}
+
+func BenchmarkMinFail_CacheNoHist(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    inp := TestInput2(staticInp)
+    MinFail(inp, CcacheTests)
+  }
+}
+
+func BenchmarkMinFail_CacheHist(b *testing.B) {
+  for i := 0; i < b.N; i++ {
+    inp := TestInput2(staticInp)
+    MinFail(inp, CcacheTests | CkeepHist)
+  }
 }
