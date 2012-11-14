@@ -40,12 +40,13 @@ func (_ TestInput2) Len() int {
 
 func TestMinFail(t *testing.T) {
 	inp := TestInput2(staticInp)
-	run, err := MinFail(inp, Cdefault)
+	run, err := MinFail(inp, 0)
 	if err != nil {
 		t.Errorf("FAILED: %v", err)
 		return
 	}
-	t.Logf("minimal failing input (%v iterations, len %v): %v\n", run.IterCount(), len(run.Minimal), run.Minimal)
+	t.Logf("minimal failing input (%v iterations, len %v): %v\n",
+			run.IterCount(), len(run.Minimal), run.Minimal)
 }
 
 func BenchmarkMinFail_NoCacheNoHist(b *testing.B) {

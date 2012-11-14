@@ -53,7 +53,7 @@ type Config int
 const (
 	CkeepHist Config = 1 << iota
 	CcacheTests
-	Cdefault = CcacheTests
+	Cconcurrent
 )
 
 type Run struct {
@@ -109,6 +109,10 @@ func (r *Run) ddmin(set Set, n int) {
 	if empty := []int{}; r.Inp.Test(empty) == Failed {
 		r.Minimal = empty
 	}
+}
+
+func (r *Run) workerListen(reset chan bool) {
+
 }
 
 func (r *Run) testSets(sets []Set) (failed Set) {
