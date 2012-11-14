@@ -11,8 +11,8 @@ type TestInput2 []int
 var staticInp []int
 
 func init() {
-	staticInp = make([]int, 200)
-	for i := 0; i < 200; i++ {
+	staticInp = make([]int, 150)
+	for i := 0; i < 150; i++ {
 		staticInp[i] = rand.Intn(15000)
 	}
 	sort.Ints(staticInp)
@@ -45,36 +45,37 @@ func TestMinFail(t *testing.T) {
 		t.Errorf("FAILED: %v", err)
 		return
 	}
-	t.Logf("minimal failing input (%v iterations, len %v): %v\n", len(run.Hists), len(run.Minimal), run.Minimal)
-}
-
-func test(t *testing.T, inp TestInput2) {
+	t.Logf("minimal failing input (%v iterations, len %v): %v\n", run.IterCount(), len(run.Minimal), run.Minimal)
 }
 
 func BenchmarkMinFail_NoCacheNoHist(b *testing.B) {
-  for i := 0; i < b.N; i++ {
-    inp := TestInput2(staticInp)
-    MinFail(inp, 0)
-  }
+	for i := 0; i < b.N; i++ {
+		inp := TestInput2(staticInp)
+		run, _ := MinFail(inp, 0)
+		b.Logf("%v iterations", run.IterCount())
+	}
 }
 
 func BenchmarkMinFail_NoCacheHist(b *testing.B) {
-  for i := 0; i < b.N; i++ {
-    inp := TestInput2(staticInp)
-    MinFail(inp, CkeepHist)
-  }
+	for i := 0; i < b.N; i++ {
+		inp := TestInput2(staticInp)
+		run, _ := MinFail(inp, CkeepHist)
+		b.Logf("%v iterations", run.IterCount())
+	}
 }
 
 func BenchmarkMinFail_CacheNoHist(b *testing.B) {
-  for i := 0; i < b.N; i++ {
-    inp := TestInput2(staticInp)
-    MinFail(inp, CcacheTests)
-  }
+	for i := 0; i < b.N; i++ {
+		inp := TestInput2(staticInp)
+		run, _ := MinFail(inp, CcacheTests)
+		b.Logf("%v iterations", run.IterCount())
+	}
 }
 
 func BenchmarkMinFail_CacheHist(b *testing.B) {
-  for i := 0; i < b.N; i++ {
-    inp := TestInput2(staticInp)
-    MinFail(inp, CcacheTests | CkeepHist)
-  }
+	for i := 0; i < b.N; i++ {
+		inp := TestInput2(staticInp)
+		run, _ := MinFail(inp, CcacheTests|CkeepHist)
+		b.Logf("%v iterations", run.IterCount())
+	}
 }

@@ -24,8 +24,8 @@ type Input interface {
 }
 
 type Hist struct {
-	Deltas	 Set
-	Out      Outcome
+	Deltas Set
+	Out    Outcome
 }
 
 const (
@@ -52,17 +52,18 @@ type Config int
 
 const (
 	CkeepHist Config = 1 << iota
-  CcacheTests
-  Cdefault = CcacheTests
+	CcacheTests
+	Cdefault = CcacheTests
 )
 
 type Run struct {
-	Inp     Input
-	Minimal Set
-	Hists   []*Hist
-	tested  setCache
-  cacheTests bool
-  keepHist bool
+	Inp        Input
+	Minimal    Set
+	Hists      []*Hist
+	tested     setCache
+	cacheTests bool
+	keepHist   bool
+	iterations int
 }
 
 func MinFail(inp Input, config Config) (*Run, error) {
@@ -74,9 +75,9 @@ func MinFail(inp Input, config Config) (*Run, error) {
 		return nil, errors.New("godd: Test passes with all deltas applied")
 	}
 
-  // get specs from config mask
-  r.cacheTests = CcacheTests & config != 0
-  r.keepHist = CkeepHist & config != 0
+	// get specs from config mask
+	r.cacheTests = CcacheTests&config != 0
+	r.keepHist = CkeepHist&config != 0
 
 	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
@@ -112,18 +113,20 @@ func (r *Run) ddmin(set Set, n int) {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	for _, set := range sets {
-    if r.cacheTests {
-      if r.tested[set.hash()] {
-        continue
-      }
-      r.tested[set.hash()] = true
-    }
+		if r.cacheTests {
+			if r.tested[set.hash()] {
+				continue
+			}
+			r.tested[set.hash()] = true
+		}
 
 		result := r.Inp.Test(set)
 
-    if r.keepHist {
-      r.Hists = append(r.Hists, &Hist{Deltas: set, Out: result})
-    }
+		if r.keepHist {
+			r.Hists = append(r.Hists, &Hist{Deltas: set, Out: result})
+		} else {
+			r.iterations++
+		}
 
 		if result == Failed {
 			r.Minimal = set
@@ -131,6 +134,10 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		}
 	}
 	return nil
+}
+
+func (r *Run) IterCount() int {
+	return max(len(r.Hists), r.iterations)
 }
 
 func split(set Set, n int) ([]Set, []Set) {
