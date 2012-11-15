@@ -11,9 +11,9 @@ type TestInput2 []int
 var staticInp []int
 
 func init() {
-	staticInp = make([]int, 200)
-	for i := 0; i < 200; i++ {
-		staticInp[i] = rand.Intn(25000)
+	staticInp = make([]int, 150)
+	for i := 0; i < 150; i++ {
+		staticInp[i] = rand.Intn(10000)
 	}
 	sort.Ints(staticInp)
 }
@@ -35,12 +35,12 @@ func (inp TestInput2) Test(index Set) Outcome {
 }
 
 func (_ TestInput2) Len() int {
-	return 25000
+	return 10000
 }
 
 func TestMinFail(t *testing.T) {
 	inp := TestInput2(staticInp)
-	run, err := MinFail(inp, 0)
+	run, err := MinFail(inp, CcacheTests)
 	if err != nil {
 		t.Errorf("FAILED: %v", err)
 		return

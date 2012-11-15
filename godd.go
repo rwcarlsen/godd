@@ -146,9 +146,9 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 				r.tested[h] = true
 			}
 
+			r.iterations++
 			select {
 			case r.jobs <- set:
-				r.iterations++
 			case hist := <- r.results:
 				if hist.Out == Failed {
 					r.Minimal = hist.Deltas
@@ -158,10 +158,11 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 			}
 		}
 
+		// check leftover results
 		for i := 0; i < len(r.results); i++ {
 			if hist := <- r.results; hist.Out == Failed {
 				r.Minimal = hist.Deltas
-				return
+				return r.Minimal
 			}
 		}
 		return nil
