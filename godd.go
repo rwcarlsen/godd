@@ -97,7 +97,7 @@ func MinFail(inp Input, config Config) (*Run, error) {
 }
 
 func (r *Run) ddmin(set Set, n int) {
-	subs, complements := r.split(set, n)
+	subs, complements := split(set, n)
 
 	// reduce to subset
 	if nextSet := r.testSets(subs); nextSet != nil {
@@ -138,6 +138,14 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		}
 
 		for _, set := range sets {
+			if r.cacheTests {
+				h := set.hash()
+				if r.tested[h] {
+					continue
+				}
+				r.tested[h] = true
+			}
+
 			select {
 			case r.jobs <- set:
 				r.iterations++
@@ -146,6 +154,7 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 					r.Minimal = hist.Deltas
 					return r.Minimal
 				}
+				r.jobs <- set
 			}
 		}
 
@@ -159,6 +168,13 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 	}
 
 	for _, set := range sets {
+		if r.cacheTests {
+			h := set.hash()
+			if r.tested[h] {
+				continue
+			}
+			r.tested[h] = true
+		}
 		result := r.Inp.Test(set)
 
 		if r.keepHist {
@@ -179,32 +195,22 @@ func (r *Run) IterCount() int {
 	return max(len(r.Hists), r.iterations)
 }
 
-func (r *Run) split(set Set, n int) ([]Set, []Set) {
+func split(set Set, n int) ([]Set, []Set) {
 	size, remainder := len(set)/n, len(set)%n
-	splits, complements := make([]Set, 0, n), make([]Set, 0, n)
+	splits, complements := make([]Set, n), make([]Set, n)
 
+	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
+		splits[count] = set[i : i+size]
 		complement := make(Set, 0, len(set)-size)
 		complement = append(append(complement, set[:i]...), set[i+size:]...)
-		split := set[i : i+size]
-		if r.cacheTests {
-			if hsh := split.hash(); !r.tested[hsh] {
-				splits = append(splits, split)
-				r.tested[hsh] = true
-			}
-			if hsh := complement.hash(); !r.tested[hsh] {
-				complements = append(complements, complement)
-				r.tested[hsh] = true
-			}
-			continue
-		}
-		splits = append(splits, split)
-		complements = append(complements, complement)
+		complements[count] = complement
+		count++
 	}
 
 	if index := len(set) - remainder; index < len(set)-1 {
-		splits = append(splits, set[index:])
-		complements = append(complements, set[:index])
+		splits[n-1] = set[index:]
+		complements[n-1] = set[:index]
 	}
 
 	return splits, complements
