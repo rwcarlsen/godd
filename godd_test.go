@@ -80,3 +80,11 @@ func BenchmarkMinFail_CacheHist(b *testing.B) {
 		b.Logf("%v iterations", run.IterCount())
 	}
 }
+
+func BenchmarkMinFail_Concurrent(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		inp := TestInput2(staticInp)
+		run, _ := MinFail(inp, CcacheTests|Cconcurrent)
+		b.Logf("%v iterations", run.IterCount())
+	}
+}

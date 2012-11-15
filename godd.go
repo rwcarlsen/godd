@@ -2,6 +2,7 @@ package godd
 
 import (
 	"errors"
+	"runtime"
 )
 
 type setHash string
@@ -63,7 +64,9 @@ type Run struct {
 	tested     setCache
 	cacheTests bool
 	keepHist   bool
+	concurrent bool
 	iterations int
+	workQueue  *queue
 }
 
 func MinFail(inp Input, config Config) (*Run, error) {
@@ -78,6 +81,9 @@ func MinFail(inp Input, config Config) (*Run, error) {
 	// get specs from config mask
 	r.cacheTests = CcacheTests&config != 0
 	r.keepHist = CkeepHist&config != 0
+	if r.concurrent = Cconcurrent&config != 0; r.concurrent {
+		r.workQueue = NewQueue(runtime.NumCPU(), inp)
+	}
 
 	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
@@ -85,7 +91,7 @@ func MinFail(inp Input, config Config) (*Run, error) {
 }
 
 func (r *Run) ddmin(set Set, n int) {
-	subs, complements := split(set, n)
+	subs, complements := r.split(set, n)
 
 	// reduce to subset
 	if nextSet := r.testSets(subs); nextSet != nil {
@@ -111,19 +117,12 @@ func (r *Run) ddmin(set Set, n int) {
 	}
 }
 
-func (r *Run) workerListen(reset chan bool) {
-
-}
-
 func (r *Run) testSets(sets []Set) (failed Set) {
-	for _, set := range sets {
-		if r.cacheTests {
-			if r.tested[set.hash()] {
-				continue
-			}
-			r.tested[set.hash()] = true
-		}
+	if r.concurrent {
+		return nil
+	}
 
+	for _, set := range sets {
 		result := r.Inp.Test(set)
 
 		if r.keepHist {
@@ -144,22 +143,32 @@ func (r *Run) IterCount() int {
 	return max(len(r.Hists), r.iterations)
 }
 
-func split(set Set, n int) ([]Set, []Set) {
+func (r *Run) split(set Set, n int) ([]Set, []Set) {
 	size, remainder := len(set)/n, len(set)%n
-	splits, complements := make([]Set, n), make([]Set, n)
+	splits, complements := make([]Set, 0, n), make([]Set, 0, n)
 
-	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
-		splits[count] = set[i : i+size]
 		complement := make(Set, 0, len(set)-size)
 		complement = append(append(complement, set[:i]...), set[i+size:]...)
-		complements[count] = complement
-		count++
+		split := set[i : i+size]
+		if r.cacheTests {
+			if hsh := split.hash(); !r.tested[hsh] {
+				splits = append(splits, split)
+				r.tested[hsh] = true
+			}
+			if hsh := complement.hash(); !r.tested[hsh] {
+				complements = append(complements, complement)
+				r.tested[hsh] = true
+			}
+			continue
+		}
+		splits = append(splits, split)
+		complements = append(complements, complement)
 	}
 
 	if index := len(set) - remainder; index < len(set)-1 {
-		splits[n-1] = set[index:]
-		complements[n-1] = set[:index]
+		splits = append(splits, set[index:])
+		complements = append(complements, set[:index])
 	}
 
 	return splits, complements
