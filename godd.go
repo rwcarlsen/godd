@@ -93,11 +93,6 @@ func MinFail(inp Input, config Config) (*Run, error) {
 	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
 
-	if r.concurrent {
-		close(r.jobs)
-		close(r.results)
-	}
-
 	return r, nil
 }
 
@@ -137,20 +132,24 @@ func (r *Run) worker() {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	if r.concurrent {
-		count := 0
+		// clear out old results
+		for i := 0; i < len(r.results); i++ {
+			<- r.results
+		}
+
 		for _, set := range sets {
 			select {
 			case r.jobs <- set:
+				r.iterations++
 			case hist := <- r.results:
 				if hist.Out == Failed {
 					r.Minimal = hist.Deltas
 					return r.Minimal
 				}
-				count++
 			}
 		}
 
-		for i := count; i < len(sets); i++ {
+		for i := 0; i < len(r.results); i++ {
 			if hist := <- r.results; hist.Out == Failed {
 				r.Minimal = hist.Deltas
 				return
