@@ -66,7 +66,8 @@ type Run struct {
 	keepHist   bool
 	concurrent bool
 	iterations int
-	workQueue  *queue
+	jobs  chan Set
+	results chan *Hist
 }
 
 func MinFail(inp Input, config Config) (*Run, error) {
@@ -82,8 +83,8 @@ func MinFail(inp Input, config Config) (*Run, error) {
 	r.cacheTests = CcacheTests&config != 0
 	r.keepHist = CkeepHist&config != 0
 	if r.concurrent = Cconcurrent&config != 0; r.concurrent {
-		r.jobs := make(chan Set, len(sets))
-		r.results := make(chan *Hist, len(sets))
+		r.jobs = make(chan Set, runtime.NumCPU())
+		r.results = make(chan *Hist, runtime.NumCPU())
 		for i := 0;  i < runtime.NumCPU(); i++ {
 			go r.worker()
 		}
@@ -136,19 +137,24 @@ func (r *Run) worker() {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	if r.concurrent {
+		count := 0
 		for _, set := range sets {
-			r.jobs <- set
-		}
-
-		found := false
-		for _ = range sets {
-			if hist := <- r.results; hist.Out == Failed {
-				r.Minimal = set
-				found = true
+			select {
+			case r.jobs <- set:
+			case hist := <- r.results:
+				if hist.Out == Failed {
+					r.Minimal = hist.Deltas
+					return r.Minimal
+				}
+				count++
 			}
 		}
-		if found {
-			return r.Minimal
+
+		for i := count; i < len(sets); i++ {
+			if hist := <- r.results; hist.Out == Failed {
+				r.Minimal = hist.Deltas
+				return
+			}
 		}
 		return nil
 	}
