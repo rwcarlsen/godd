@@ -82,11 +82,21 @@ func MinFail(inp Input, config Config) (*Run, error) {
 	r.cacheTests = CcacheTests&config != 0
 	r.keepHist = CkeepHist&config != 0
 	if r.concurrent = Cconcurrent&config != 0; r.concurrent {
-		r.workQueue = NewQueue(runtime.NumCPU(), inp)
+		r.jobs := make(chan Set, len(sets))
+		r.results := make(chan *Hist, len(sets))
+		for i := 0;  i < runtime.NumCPU(); i++ {
+			go r.worker()
+		}
 	}
 
 	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
+
+	if r.concurrent {
+		close(r.jobs)
+		close(r.results)
+	}
+
 	return r, nil
 }
 
@@ -117,8 +127,29 @@ func (r *Run) ddmin(set Set, n int) {
 	}
 }
 
+func (r *Run) worker() {
+	for set := range r.jobs {
+		outcome := r.Inp.Test(set)
+		r.results <- &Hist{Deltas: set, Out: outcome}
+	}
+}
+
 func (r *Run) testSets(sets []Set) (failed Set) {
 	if r.concurrent {
+		for _, set := range sets {
+			r.jobs <- set
+		}
+
+		found := false
+		for _ = range sets {
+			if hist := <- r.results; hist.Out == Failed {
+				r.Minimal = set
+				found = true
+			}
+		}
+		if found {
+			return r.Minimal
+		}
 		return nil
 	}
 
