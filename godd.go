@@ -132,42 +132,12 @@ func (r *Run) worker() {
 
 func (r *Run) testSets(sets []Set) (failed Set) {
 	if r.concurrent {
-		// clear out old results
-		for i := 0; i < len(r.results); i++ {
-			<- r.results
-		}
-
-		for _, set := range sets {
-			if r.cacheTests {
-				h := set.hash()
-				if r.tested[h] {
-					continue
-				}
-				r.tested[h] = true
-			}
-
-			r.iterations++
-			select {
-			case r.jobs <- set:
-			case hist := <- r.results:
-				if hist.Out == Failed {
-					r.Minimal = hist.Deltas
-					return r.Minimal
-				}
-				r.jobs <- set
-			}
-		}
-
-		// check leftover results
-		for i := 0; i < len(r.results); i++ {
-			if hist := <- r.results; hist.Out == Failed {
-				r.Minimal = hist.Deltas
-				return r.Minimal
-			}
-		}
-		return nil
+		return r.concTests(sets)
 	}
+	return r.serialTests(sets)
+}
 
+func (r *Run) serialTests(sets []Set) (failed Set) {
 	for _, set := range sets {
 		if r.cacheTests {
 			h := set.hash()
@@ -187,6 +157,47 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		if result == Failed {
 			r.Minimal = set
 			return set
+		}
+	}
+	return nil
+}
+
+func (r *Run) concTests(sets []Set) (failed Set) {
+	// clear out old results
+	for i := 0; i < len(r.results); i++ {
+		<- r.results
+	}
+
+	for _, set := range sets {
+		if r.cacheTests {
+			h := set.hash()
+			if r.tested[h] {
+				continue
+			}
+			r.tested[h] = true
+		}
+
+		r.iterations++
+		select {
+		case r.jobs <- set:
+		case hist := <- r.results:
+			if r.keepHist {
+				r.Hists = append(r.Hists, hist)
+			}
+
+			if hist.Out == Failed {
+				r.Minimal = hist.Deltas
+				return r.Minimal
+			}
+			r.jobs <- set
+		}
+	}
+
+	// check leftover results
+	for i := 0; i < len(r.results); i++ {
+		if hist := <- r.results; hist.Out == Failed {
+			r.Minimal = hist.Deltas
+			return r.Minimal
 		}
 	}
 	return nil

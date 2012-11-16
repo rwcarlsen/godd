@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-type TestInput2 []int
+type TestInput []int
 
 var staticInp []int
 
@@ -18,7 +18,7 @@ func init() {
 	sort.Ints(staticInp)
 }
 
-func (inp TestInput2) Test(index Set) Outcome {
+func (inp TestInput) Test(index Set) Outcome {
 	for _, failPart := range inp {
 		found := false
 		for _, v := range index {
@@ -34,12 +34,12 @@ func (inp TestInput2) Test(index Set) Outcome {
 	return Failed
 }
 
-func (_ TestInput2) Len() int {
+func (_ TestInput) Len() int {
 	return 10000
 }
 
 func TestMinFail(t *testing.T) {
-	inp := TestInput2(staticInp)
+	inp := TestInput(staticInp)
 	run, err := MinFail(inp, CcacheTests)
 	if err != nil {
 		t.Errorf("FAILED: %v", err)
@@ -51,7 +51,7 @@ func TestMinFail(t *testing.T) {
 
 func BenchmarkMinFail_NoCacheNoHist(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		inp := TestInput2(staticInp)
+		inp := TestInput(staticInp)
 		run, _ := MinFail(inp, 0)
 		b.Logf("%v iterations", run.IterCount())
 	}
@@ -59,7 +59,7 @@ func BenchmarkMinFail_NoCacheNoHist(b *testing.B) {
 
 func BenchmarkMinFail_NoCacheHist(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		inp := TestInput2(staticInp)
+		inp := TestInput(staticInp)
 		run, _ := MinFail(inp, CkeepHist)
 		b.Logf("%v iterations", run.IterCount())
 	}
@@ -67,7 +67,7 @@ func BenchmarkMinFail_NoCacheHist(b *testing.B) {
 
 func BenchmarkMinFail_CacheNoHist(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		inp := TestInput2(staticInp)
+		inp := TestInput(staticInp)
 		run, _ := MinFail(inp, CcacheTests)
 		b.Logf("%v iterations", run.IterCount())
 	}
@@ -75,7 +75,7 @@ func BenchmarkMinFail_CacheNoHist(b *testing.B) {
 
 func BenchmarkMinFail_CacheHist(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		inp := TestInput2(staticInp)
+		inp := TestInput(staticInp)
 		run, _ := MinFail(inp, CcacheTests|CkeepHist)
 		b.Logf("%v iterations", run.IterCount())
 	}
@@ -83,7 +83,7 @@ func BenchmarkMinFail_CacheHist(b *testing.B) {
 
 func BenchmarkMinFail_Concurrent(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		inp := TestInput2(staticInp)
+		inp := TestInput(staticInp)
 		run, _ := MinFail(inp, CcacheTests|Cconcurrent)
 		b.Logf("%v iterations", run.IterCount())
 	}
