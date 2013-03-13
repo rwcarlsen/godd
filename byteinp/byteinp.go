@@ -121,9 +121,18 @@ func (t *TestCase) Len() int {
 func splitAny(s []byte, chars string) [][]byte {
 	beg := 0
 	chunks := [][]byte{}
-	for i, b := range s {
+	start := 0
+	for i := 0; i < len(s); i++{
+		i = bytes.IndexAny(s[start:], chars)
+		if end == -1 {
+			chunks = append(chunks, s[start:]
+			break
+		}
+		chunks
+		start = i + 1
+	}
 		for _, c := range chars {
-			if b == byte(c) {
+			if b == c {
 				end := i + 1
 				nextNotWhite := bytes.IndexAny(s[end:end+1], chars) == -1
 				if nextNotWhite {
