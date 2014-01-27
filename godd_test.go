@@ -1,85 +1,81 @@
 package godd
 
 import (
-	"math/rand"
-	"sort"
 	"testing"
 )
 
-type TestInput int
+type Tester Set
 
-func (inp TestInput) Test(index Set) Outcome {
-	if len(index)%2 == 0 {
+const TestSize = 1000
+
+func (bads Tester) Test(index Set) Outcome {
+	found := true
+	for _, bad := range bads {
+		subfound := false
+		for _, ti := range index {
+			if ti == bad {
+				subfound = true
+				break
+			}
+		}
+		found = found && subfound
+	}
+	if found {
 		return Failed
 	}
 	return Passed
 }
 
-func (inp TestInput) Len() int {
-	return int(inp)
+func (inp Tester) Len() int {
+	return TestSize
 }
 
-type TestInput2 []int
-
-func (inp TestInput2) Test(index Set) Outcome {
-	for _, failPart := range inp {
-		found := false
-		for _, v := range index {
-			if v == failPart {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return Passed
-		}
-	}
-	return Failed
-}
-
-func (_ TestInput2) Len() int {
-	return 20000
+var tests = []Set{
+	Set{0},
+	Set{TestSize - 1},
+	Set{0, TestSize - 1},
+	Set{2, 356, 358},
 }
 
 func TestMinFail(t *testing.T) {
-	test1(t, TestInput(12))
-	test1(t, TestInput(8))
-	test1(t, TestInput(2))
+	for i, set := range tests {
+		tester := Tester(set)
+		run, err := MinFail(tester)
+		if err != nil {
+			t.Errorf("set %v (%+v) failed: %v", i, set, err)
+		}
 
-	inp := make([]int, 200)
-	for i := 0; i < 200; i++ {
-		inp[i] = rand.Intn(20000)
-	}
-	sort.Ints(inp)
-	test2(t, TestInput2(inp))
-}
+		if len(run.MinFail) != len(set) {
+			t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+		}
 
-func test1(t *testing.T, inp TestInput) {
-	t.Logf("\n--------- input length %v ----------\n", inp.Len())
-
-	run, err := MinFail(inp)
-
-	if err != nil {
-		t.Errorf("FAILED: %v", err)
-		return
-	}
-
-	t.Logf("minimal failing input (%v iterations): %v\n", len(run.Hists), run.Minimal)
-
-	if len(run.Minimal) != 0 {
-		t.Errorf("FAILED:: minimal output: got %v, expected []", run.Minimal)
+		for i := range run.MinFail {
+			if set[i] != run.MinFail[i] {
+				t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+			}
+		}
+		t.Logf("set %v: expected %+v, got %+v", i, set, run.MinFail)
 	}
 }
 
-func test2(t *testing.T, inp TestInput2) {
-	t.Logf("\n--------- input length %v ----------\n", inp.Len())
+func TestMinDiff(t *testing.T) {
+	for i, set := range tests {
+		tester := Tester(set)
+		run, err := MinDiff(tester)
+		if err != nil {
+			t.Errorf("set %v (%+v) failed: %v", i, set, err)
+		}
 
-	run, err := MinFail(inp)
+		if len(run.MinFail) != len(set) {
+			t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+		}
 
-	if err != nil {
-		t.Errorf("FAILED: %v", err)
-		return
+		for i := range run.MinFail {
+			if set[i] != run.MinFail[i] {
+				t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+			}
+		}
+		t.Logf("set %v minfail: expected %+v, got %+v", i, set, run.MinFail)
+		t.Logf("set %v minpass: %+v", i, run.MinPass)
 	}
-
-	t.Logf("minimal failing input (%v iterations, len %v): %v\n", len(run.Hists), len(run.Minimal), run.Minimal)
 }

@@ -62,7 +62,8 @@ type Hist struct {
 
 type Run struct {
 	Inp     Input
-	Minimal Set
+	MinFail Set
+	MinPass Set
 	Hists   []*Hist
 	tested  setCache
 }
@@ -70,28 +71,96 @@ type Run struct {
 func MinFail(inp Input) (*Run, error) {
 	r := &Run{Inp: inp}
 	r.tested = make(setCache)
-	initialSet := IntRange(inp.Len())
+	initialSet := intRange(inp.Len())
 
 	if inp.Test(initialSet) != Failed {
 		return nil, errors.New("godd: Test passes with all deltas applied")
 	}
 
-	r.Minimal = initialSet
 	r.ddmin(initialSet, 2)
 	return r, nil
 }
 
-func (r *Run) ddmin(set Set, n int) {
+func MinDiff(inp Input) (*Run, error) {
+	r := &Run{Inp: inp}
+	r.tested = make(setCache)
+	initialSet := intRange(inp.Len())
+
+	if inp.Test(initialSet) != Failed {
+		return nil, errors.New("godd: Test passes with all deltas applied")
+	} else if inp.Test(Set{}) != Passed {
+		return nil, errors.New("godd: Test does not pass with no deltas applied")
+	}
+
+	r.dd(Set{}, initialSet, 2)
+	return r, nil
+}
+
+func Sub(a, b Set) Set {
+	m := make(map[int]struct{}, len(b))
+	for _, v := range b {
+		m[v] = struct{}{}
+	}
+	c := make(Set, 0, len(a))
+	for _, v := range a {
+		if _, ok := m[v]; !ok {
+			c = append(c, v)
+		}
+	}
+	return c
+}
+
+func (r *Run) dd(passing, failing Set, n int) {
+	r.MinFail = failing
+	r.MinPass = passing
+	set := Sub(failing, passing)
 	subs, complements := split(set, n)
 
 	// reduce to subset
-	if nextSet := r.testSets(subs); nextSet != nil {
+	if nextSet := r.testSets(subs, Failed); nextSet != nil {
+		r.dd(passing, nextSet, 2)
+		return
+	}
+
+	// increase to complement
+	if nextSet := r.testSets(complements, Passed); nextSet != nil {
+		r.dd(nextSet, failing, 2)
+		return
+	}
+
+	// increase to subset
+	if nextSet := r.testSets(subs, Passed); nextSet != nil {
+		r.dd(nextSet, failing, max(n-1, 2))
+		return
+	}
+
+	// reduce to complement
+	if nextSet := r.testSets(complements, Failed); nextSet != nil {
+		r.dd(passing, nextSet, max(n-1, 2))
+		return
+	}
+
+	// increase granularity
+	if n < len(set) {
+		r.dd(passing, failing, min(len(set), 2*n))
+		return
+	}
+
+	// otherwise, done
+}
+
+func (r *Run) ddmin(set Set, n int) {
+	r.MinFail = set
+	subs, complements := split(set, n)
+
+	// reduce to subset
+	if nextSet := r.testSets(subs, Failed); nextSet != nil {
 		r.ddmin(nextSet, 2)
 		return
 	}
 
 	// reduce to complement
-	if nextSet := r.testSets(complements); nextSet != nil {
+	if nextSet := r.testSets(complements, Failed); nextSet != nil {
 		r.ddmin(nextSet, max(n-1, 2))
 		return
 	}
@@ -104,11 +173,13 @@ func (r *Run) ddmin(set Set, n int) {
 
 	// handle case where empty set of deltas causes failure of interest
 	if empty := []int{}; r.Inp.Test(empty) == Failed {
-		r.Minimal = empty
+		r.MinFail = empty
 	}
+
+	// otherwise, done
 }
 
-func (r *Run) testSets(sets []Set) (failed Set) {
+func (r *Run) testSets(sets []Set, expected Outcome) (matched Set) {
 	for _, set := range sets {
 		if r.tested[set.hash()] {
 			continue
@@ -118,8 +189,7 @@ func (r *Run) testSets(sets []Set) (failed Set) {
 		result := r.Inp.Test(set)
 		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Out: result})
 
-		if result == Failed {
-			r.Minimal = set
+		if expected == result {
 			return set
 		}
 	}
@@ -147,7 +217,7 @@ func split(set Set, n int) ([]Set, []Set) {
 	return splits, complements
 }
 
-func IntRange(n int) Set {
+func intRange(n int) Set {
 	r := make(Set, n)
 	for i := 0; i < n; i++ {
 		r[i] = i
