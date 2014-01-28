@@ -2,6 +2,7 @@ package godd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -60,10 +61,14 @@ type Hist struct {
 	Out      Outcome
 }
 
+func (h *Hist) String() string {
+	return fmt.Sprintf("%v: %v", h.DeltaInd, h.Out)
+}
+
 type Run struct {
 	Inp     Input
 	MinFail Set
-	MinPass Set
+	MaxPass Set
 	Hists   []*Hist
 	tested  setCache
 }
@@ -112,9 +117,13 @@ func Sub(a, b Set) Set {
 
 func (r *Run) dd(passing, failing Set, n int) {
 	r.MinFail = failing
-	r.MinPass = passing
+	r.MaxPass = passing
 	set := Sub(failing, passing)
-	subs, complements := split(set, n)
+	if n > len(set) {
+		return
+	}
+
+	subs, complements := split(passing, failing, n)
 
 	// reduce to subset
 	if nextSet := r.testSets(subs, Failed); nextSet != nil {
@@ -151,7 +160,11 @@ func (r *Run) dd(passing, failing Set, n int) {
 
 func (r *Run) ddmin(set Set, n int) {
 	r.MinFail = set
-	subs, complements := split(set, n)
+	if n > len(set) {
+		return
+	}
+
+	subs, complements := splitMin(set, n)
 
 	// reduce to subset
 	if nextSet := r.testSets(subs, Failed); nextSet != nil {
@@ -181,11 +194,6 @@ func (r *Run) ddmin(set Set, n int) {
 
 func (r *Run) testSets(sets []Set, expected Outcome) (matched Set) {
 	for _, set := range sets {
-		if r.tested[set.hash()] {
-			continue
-		}
-		r.tested[set.hash()] = true
-
 		result := r.Inp.Test(set)
 		r.Hists = append(r.Hists, &Hist{DeltaInd: set, Out: result})
 
@@ -196,22 +204,47 @@ func (r *Run) testSets(sets []Set, expected Outcome) (matched Set) {
 	return nil
 }
 
-func split(set Set, n int) ([]Set, []Set) {
+func splitMin(set Set, n int) ([]Set, []Set) {
 	size, remainder := len(set)/n, len(set)%n
 	splits, complements := make([]Set, n), make([]Set, n)
 
 	count := 0
 	for i := 0; i < len(set)-remainder; i += size {
-		splits[count] = set[i : i+size]
+		splits[count] = append(splits[count], set[i:i+size]...)
 		complement := make(Set, 0, len(set)-size)
 		complement = append(append(complement, set[:i]...), set[i+size:]...)
 		complements[count] = complement
 		count++
 	}
 
-	if index := len(set) - remainder; index < len(set)-1 {
-		splits[n-1] = set[index:]
-		complements[n-1] = set[:index]
+	index := len(set) - remainder
+	splits[n-1] = append(splits[n-1], set[index:]...)
+
+	if len(complements[n-1]) > 0 {
+		complements[n-1] = complements[n-1][:len(complements[n-1])-remainder]
+	}
+
+	return splits, complements
+}
+
+func split(passing, failing Set, n int) ([]Set, []Set) {
+	set := Sub(failing, passing)
+	size, remainder := len(set)/n, len(set)%n
+	splits, complements := make([]Set, n), make([]Set, n)
+
+	count := 0
+	for i := 0; i < len(set)-remainder; i += size {
+		splits[count] = append(splits[count], passing...)
+		splits[count] = append(splits[count], set[i:i+size]...)
+		complements[count] = Sub(failing, set[i:i+size])
+		count++
+	}
+
+	index := len(set) - remainder
+	splits[n-1] = append(splits[n-1], set[index:]...)
+
+	if len(complements[n-1]) > 0 {
+		complements[n-1] = Sub(complements[n-1], set[index:])
 	}
 
 	return splits, complements

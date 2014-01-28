@@ -6,7 +6,7 @@ import (
 
 type Tester Set
 
-const TestSize = 1000
+const TestSize = 10
 
 func (bads Tester) Test(index Set) Outcome {
 	found := true
@@ -34,7 +34,7 @@ var tests = []Set{
 	Set{0},
 	Set{TestSize - 1},
 	Set{0, TestSize - 1},
-	Set{2, 356, 358},
+	Set{1, 6, 8},
 }
 
 func TestMinFail(t *testing.T) {
@@ -54,7 +54,10 @@ func TestMinFail(t *testing.T) {
 				t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
 			}
 		}
-		t.Logf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+		t.Logf("set %v (%v iter): %+v", i, len(run.Hists), run.MinFail)
+		for _, h := range run.Hists {
+			t.Log("    ", h)
+		}
 	}
 }
 
@@ -66,16 +69,14 @@ func TestMinDiff(t *testing.T) {
 			t.Errorf("set %v (%+v) failed: %v", i, set, err)
 		}
 
-		if len(run.MinFail) != len(set) {
-			t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
+		if v := len(run.MinFail) - len(run.MaxPass); v != 1 {
+			t.Errorf("set %v len(fail)-len(pass)=%v instead of 1", i, v)
+			continue
 		}
 
-		for i := range run.MinFail {
-			if set[i] != run.MinFail[i] {
-				t.Errorf("set %v: expected %+v, got %+v", i, set, run.MinFail)
-			}
+		t.Logf("set %v (%v iter) maxpass=%+v, minfail=%+v", i, len(run.Hists), run.MaxPass, run.MinFail)
+		for _, h := range run.Hists {
+			t.Log("    ", h)
 		}
-		t.Logf("set %v minfail: expected %+v, got %+v", i, set, run.MinFail)
-		t.Logf("set %v minpass: %+v", i, run.MinPass)
 	}
 }
