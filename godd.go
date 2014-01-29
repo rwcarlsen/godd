@@ -3,10 +3,7 @@ package godd
 import (
 	"errors"
 	"fmt"
-	"os"
 )
-
-var buf = buffer(false)
 
 type Outcome int
 
@@ -28,27 +25,20 @@ const (
 	Undetermined
 )
 
-type buffer bool
-
-func (b buffer) Write(p []byte) (n int, err error) {
-	if b {
-		return os.Stdout.Write(p)
-	}
-	return len(p), nil
-}
-
-type setHash string
-
-type setCache map[setHash]bool
-
 type Set []int
 
-func (s Set) hash() setHash {
-	h := make([]byte, len(s))
-	for i, v := range s {
-		h[i] = byte(v)
+func Sub(a, b Set) Set {
+	m := make(map[int]struct{}, len(b))
+	for _, v := range b {
+		m[v] = struct{}{}
 	}
-	return setHash(h)
+	c := make(Set, 0, len(a))
+	for _, v := range a {
+		if _, ok := m[v]; !ok {
+			c = append(c, v)
+		}
+	}
+	return c
 }
 
 type Input interface {
@@ -70,12 +60,10 @@ type Run struct {
 	MinFail Set
 	MaxPass Set
 	Hists   []*Hist
-	tested  setCache
 }
 
 func MinFail(inp Input) (*Run, error) {
 	r := &Run{Inp: inp}
-	r.tested = make(setCache)
 	initialSet := intRange(inp.Len())
 
 	if inp.Test(initialSet) != Failed {
@@ -88,7 +76,6 @@ func MinFail(inp Input) (*Run, error) {
 
 func MinDiff(inp Input) (*Run, error) {
 	r := &Run{Inp: inp}
-	r.tested = make(setCache)
 	initialSet := intRange(inp.Len())
 
 	if inp.Test(initialSet) != Failed {
@@ -99,20 +86,6 @@ func MinDiff(inp Input) (*Run, error) {
 
 	r.dd(Set{}, initialSet, 2)
 	return r, nil
-}
-
-func Sub(a, b Set) Set {
-	m := make(map[int]struct{}, len(b))
-	for _, v := range b {
-		m[v] = struct{}{}
-	}
-	c := make(Set, 0, len(a))
-	for _, v := range a {
-		if _, ok := m[v]; !ok {
-			c = append(c, v)
-		}
-	}
-	return c
 }
 
 func (r *Run) dd(passing, failing Set, n int) {
