@@ -6,7 +6,7 @@ import (
 
 type Tester Set
 
-const TestSize = 10
+const TestSize = 10000
 
 func (bads Tester) Test(index Set) Outcome {
 	found := true
@@ -34,7 +34,7 @@ var tests = []Set{
 	Set{0},
 	Set{TestSize - 1},
 	Set{0, TestSize - 1},
-	Set{1, 6, 8},
+	Set{1, TestSize / 2, TestSize / 2 + 2},
 }
 
 func TestMinFail(t *testing.T) {
@@ -55,9 +55,9 @@ func TestMinFail(t *testing.T) {
 			}
 		}
 		t.Logf("set %v (%v iter): %+v", i, len(run.Hists), run.MinFail)
-		for _, h := range run.Hists {
-			t.Log("    ", h)
-		}
+		//for _, h := range run.Hists {
+		//	t.Log("    ", h)
+		//}
 	}
 }
 
@@ -74,9 +74,9 @@ func TestMinDiff(t *testing.T) {
 			continue
 		}
 
-		t.Logf("set %v (%v iter) maxpass=%+v, minfail=%+v", i, len(run.Hists), run.MaxPass, run.MinFail)
-		for _, h := range run.Hists {
-			t.Log("    ", h)
-		}
+		t.Logf("set %v (%v iter) mindelta=%+v", i, len(run.Hists), Sub(run.MinFail, run.MaxPass))
+		//for _, h := range run.Hists {
+		//	t.Log("    ", h)
+		//}
 	}
 }
